@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zen Словникові Картки</title>
+  <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22&gt;&lt;text y=%22.9em%22 font-size=%2290%22&gt;🗂️&lt;/text&gt;&lt;/svg&gt;">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: "Nunito", sans-serif;
+    }
+    
+    /* 3D Flip Card Styles */
+    .flip-card {
+      background-color: transparent;
+      perspective: 1000px;
+    }
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .flip-card.flipped .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+    .flip-card-front, .flip-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: 1.5rem;
+    }
+    .flip-card-back {
+      transform: rotateY(180deg);
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #fef3c7;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #fcd34d;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #f59e0b;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100 p-4 md:p-8 flex flex-col items-center">
+
+  <header class="text-center mb-8 max-w-2xl w-full">
+    <h1 class="text-4xl md:text-5xl font-black text-amber-900 drop-shadow-sm mb-2">
+      🗂️ Zen Флеш-Картки
+    </h1>
+    <p class="text-amber-700 font-bold text-base md:text-lg">
+      Грайливий тренажер для легкого запам'ятовування німецьких слів без зайвих турбот!
+    </p>
+  </header>
+
+  <!-- НАВІГАЦІЯ МІЖ РЕЖИМАМИ -->
+  <div class="flex gap-4 mb-8 bg-white/60 p-2 rounded-2xl shadow-md border-2 border-white max-w-md w-full">
+    <button id="tab-btn-manage" onclick="app.switchTab('manage')" class="flex-1 py-3 px-4 rounded-xl font-extrabold text-base transition-all bg-amber-500 text-white shadow-md transform scale-105">
+      🛠️ Словник
+    </button>
+    <button id="tab-btn-practice" onclick="app.switchTab('practice')" class="flex-1 py-3 px-4 rounded-xl font-extrabold text-base transition-all text-amber-800 hover:bg-amber-100">
+      🧠 Картки
+    </button>
+  </div>
+
+  <!-- ГОЛОВНИЙ КОНТЕЙНЕР -->
+  <main class="max-w-4xl w-full">
+    
+    <!-- СЕКЦІЯ 1: КЕРУВАННЯ СЛОВАМИ -->
+    <section id="view-manage" class="space-y-8 animate-fade-in">
+      
+      <!-- Блок додавання слів -->
+      <div class="bg-white/90 border-4 border-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        <div class="absolute -top-6 -right-6 text-6xl opacity-10 select-none">✍️</div>
+        <h2 class="text-2xl font-black text-amber-900 mb-4">Додати нові слова</h2>
+        
+        <!-- Примітка заповнення -->
+        <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-4 text-sm font-bold text-amber-800">
+          <p class="mb-1">💡 <span class="text-amber-900 font-extrabold">Приклад заповнення (формат: Німецьке слово - Український переклад):</span></p>
+          <ul class="list-disc pl-5 space-y-0.5 text-amber-900/80 font-semibold">
+            <li>das Haus - будинок</li>
+            <li>der Hund - собака</li>
+            <li>schön - красивий</li>
+            <li>spazieren gehen - гуляти</li>
+          </ul>
+        </div>
+
+        <textarea
+          id="words-input"
+          rows="5"
+          class="w-full p-4 rounded-2xl border-4 border-amber-100 focus:border-amber-300 focus:ring-0 focus:outline-none mb-4 shadow-inner text-base md:text-lg font-bold text-amber-900 placeholder-amber-300 bg-amber-50/30"
+          placeholder="Вставте або напишіть слова сюди..."
+        ></textarea>
+        
+        <button onclick="app.addWords()" class="w-full md:w-auto bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-lg px-8 py-4 rounded-2xl transition shadow-lg transform hover:scale-[1.02] active:scale-95">
+          🚀 Імпортувати до словника
+        </button>
+      </div>
+
+      <!-- Блок списку слів -->
+      <div class="bg-white/90 border-4 border-white rounded-3xl p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h2 class="text-2xl font-black text-amber-900">Мій словник</h2>
+            <p class="text-sm font-bold text-amber-600">
+              Всього: <span id="total-count" class="font-black text-amber-900 text-base">0</span> | 
+              Обрано для карток: <span id="selected-count" class="font-black text-orange-600 text-base">0</span>
+            </p>
+          </div>
+          
+          <!-- Масові дії -->
+          <div class="flex gap-2 w-full sm:w-auto">
+            <button onclick="app.bulkSelect(true)" class="flex-1 sm:flex-none text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 font-black px-3 py-2 rounded-xl transition">
+              ✅ Обрати всі
+            </button>
+            <button onclick="app.bulkSelect(false)" class="flex-1 sm:flex-none text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 font-black px-3 py-2 rounded-xl transition">
+              ❌ Зняти всі
+            </button>
+            <button onclick="app.clearAllDB()" class="flex-1 sm:flex-none text-xs bg-red-100 hover:bg-red-200 text-red-700 font-black px-3 py-2 rounded-xl transition">
+              🗑️ Очистити базу
+            </button>
+          </div>
+        </div>
+
+        <!-- Таблиця / Список слів -->
+        <div class="overflow-hidden border-2 border-amber-100 rounded-2xl max-h-[400px] overflow-y-auto bg-amber-50/10">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-amber-100 text-amber-900 font-black text-sm select-none sticky top-0 z-10 shadow-sm">
+                <th class="p-4 w-12 text-center">Вибір</th>
+                <th class="p-4">Німецька</th>
+                <th class="p-4">Українська</th>
+                <th class="p-4 w-16 text-center">Дія</th>
+              </tr>
+            </thead>
+            <tbody id="words-table-body" class="divide-y divide-amber-100 text-amber-900 font-bold text-base bg-white">
+              <!-- Рядки генеруються динамічно -->
+            </tbody>
+          </table>
+          <div id="empty-state" class="text-center p-8 text-amber-400 italic font-bold hidden">
+            Словник порожній. Будь ласка, додайте слова вище! 🌟
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- СЕКЦІЯ 2: ТРЕНУВАННЯ (КАРТКИ) -->
+    <section id="view-practice" class="space-y-6 hidden animate-fade-in">
+      
+      <!-- Попередження, якщо нічого не обрано -->
+      <div id="practice-warning" class="bg-white/90 border-4 border-white rounded-3xl p-8 text-center shadow-xl max-w-xl mx-auto hidden">
+        <div class="text-5xl mb-4">🤷‍♂️</div>
+        <h3 class="text-xl font-black text-amber-900 mb-2">Немає слів для тренування!</h3>
+        <p class="text-amber-700 font-bold mb-6">Будь ласка, перейдіть у вкладку "Словник" та виберіть прапорцями слова, які ви хочете вчити.</p>
+        <button onclick="app.switchTab('manage')" class="bg-amber-500 hover:bg-amber-600 text-white font-black px-6 py-3 rounded-xl transition shadow-md">
+          ⚙️ Перейти до Словника
+        </button>
+      </div>
+
+      <!-- Контент тренажера -->
+      <div id="practice-content" class="max-w-xl mx-auto flex flex-col items-center">
+        
+        <!-- Лічильник та перемішування -->
+        <div class="w-full bg-white/60 p-4 rounded-2xl border-2 border-white mb-6 shadow-sm flex flex-wrap gap-4 justify-between items-center">
+          <span id="card-counter" class="text-amber-800 font-black bg-white px-4 py-2 rounded-xl shadow-sm text-sm">
+            Картка 0 з 0
+          </span>
+          
+          <button onclick="app.shufflePractice()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 font-black text-sm px-4 py-2 rounded-xl shadow-sm transition transform active:scale-95">
+            🔀 Перемішати
+          </button>
+
+          <div class="flex items-center gap-2 w-full sm:w-auto bg-white p-1 rounded-xl shadow-inner border border-amber-50">
+            <button id="mode-de-ua" onclick="app.setDirection('de-ua')" class="px-3 py-1.5 rounded-lg text-sm font-bold bg-amber-500 text-white shadow transition-all">🇩🇪 ➔ 🇺🇦</button>
+            <button id="mode-ua-de" onclick="app.setDirection('ua-de')" class="px-3 py-1.5 rounded-lg text-sm font-bold text-amber-600 hover:bg-amber-50 transition-all">🇺🇦 ➔ 🇩🇪</button>
+          </div>
+        </div>
+
+        <!-- 3D ФЛЕШ КАРТКА -->
+        <div id="flash-card-element" onclick="app.flipCard()" class="flip-card w-full h-72 md:h-80 cursor-pointer mb-6 transform transition-transform hover:scale-[1.02]">
+          <div class="flip-card-inner shadow-2xl">
+            
+            <div class="flip-card-front bg-white border-8 border-amber-300 p-6">
+              <div class="absolute top-4 w-full px-4 flex justify-between items-start box-border left-0">
+                <span id="front-lang-label" class="text-xs font-black uppercase tracking-wider text-amber-400 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 select-none mt-1">Deutsch 🇩🇪</span>
+                
+                <button id="front-audio-btn" onclick="event.stopPropagation(); app.speakCurrentWord()" class="bg-amber-100 hover:bg-amber-200 text-amber-700 p-2 rounded-full transition-transform transform active:scale-90" title="Прослухати">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </button>
+              </div>
+
+              <p id="card-front-text" class="text-2xl md:text-3xl font-black text-amber-950 px-4 break-words w-full leading-tight">Wort</p>
+              <span class="absolute bottom-4 text-xs font-extrabold text-amber-300 animate-pulse select-none">Клікніть, щоб перевернути 🔄</span>
+            </div>
+            
+            <div class="flip-card-back bg-gradient-to-br from-amber-400 to-orange-400 text-white border-8 border-white p-6">
+              <div class="absolute top-4 w-full px-4 flex justify-between items-start box-border left-0">
+                <span id="back-lang-label" class="text-xs font-black uppercase tracking-wider text-amber-100 bg-white/20 px-3 py-1 rounded-full select-none">Українська 🇺🇦</span>
+                
+                <button id="back-audio-btn" onclick="event.stopPropagation(); app.speakCurrentWord()" class="hidden bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-transform transform active:scale-90" title="Прослухати">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </button>
+              </div>
+
+              <p id="card-back-text" class="text-2xl md:text-3xl font-black px-4 break-words w-full leading-tight">Слово</p>
+              <span class="absolute bottom-4 text-xs font-extrabold text-amber-100 select-none">Натисніть знову для реверсу 🔄</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- КНОПКИ НАВІГАЦІЇ -->
+        <div class="flex items-center gap-4 w-full">
+          <button onclick="app.prevCard()" class="flex-1 bg-white hover:bg-amber-100 border-4 border-white text-amber-900 font-black text-lg p-4 rounded-2xl transition shadow-lg transform active:scale-95 text-center">
+            ⬅️ Назад
+          </button>
+          
+          <button onclick="app.flipCard()" class="bg-amber-500 hover:bg-amber-600 text-white font-black text-lg p-4 px-6 rounded-2xl transition shadow-lg transform active:scale-95 text-center">
+            🔄 Фліп
+          </button>
+
+          <button onclick="app.nextCard()" class="flex-1 bg-white hover:bg-amber-100 border-4 border-white text-amber-900 font-black text-lg p-4 rounded-2xl transition shadow-lg transform active:scale-95 text-center">
+            Вперед ➡️
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const app = {
+      wordsDB: [],
+      practiceList: [],
+      currentIndex: 0,
+      activeTab: 'manage',
+      isGeneratingImages: false, // Flag to prevent multiple generation loops
+
+      setDirection(dir) {
+        this.direction = dir;
+        this.resetFlip();
+
+        const btnDeUa = document.getElementById('mode-de-ua');
+        const btnUaDe = document.getElementById('mode-ua-de');
+
+        if (dir === 'de-ua') {
+          btnDeUa.className = "px-3 py-1.5 rounded-lg text-sm font-bold bg-amber-500 text-white shadow transition-all";
+          btnUaDe.className = "px-3 py-1.5 rounded-lg text-sm font-bold text-amber-600 hover:bg-amber-50 transition-all";
+        } else {
+          btnUaDe.className = "px-3 py-1.5 rounded-lg text-sm font-bold bg-amber-500 text-white shadow transition-all";
+          btnDeUa.className = "px-3 py-1.5 rounded-lg text-sm font-bold text-amber-600 hover:bg-amber-50 transition-all";
+        }
+
+        setTimeout(() => this.renderCard(), 150);
+      },
+
+      init() {
+        this.loadFromStorage();
+        if (this.wordsDB.length === 0) {
+          this.wordsDB = [
+            { id: 1, de: "das Auto", ua: "автомобіль", selected: true },
+            { id: 2, de: "der Tisch", ua: "стіл", selected: true },
+            { id: 3, de: "sprechen", ua: "розмовляти", selected: true },
+            { id: 4, de: "Guten Tag", ua: "Добрий день", selected: true }
+          ];
+          this.saveToStorage();
+        }
+        this.renderWordList();
+      },
+
+      loadFromStorage() {
+        const stored = localStorage.getItem("zenGermanFlashcardsData");
+        if (stored) {
+          try {
+            this.wordsDB = JSON.parse(stored);
+          } catch(e) {
+            console.error("Помилка завантаження бази даних флешкарток", e);
+            this.wordsDB = [];
+          }
+        }
+      },
+
+      saveToStorage() {
+        localStorage.setItem("zenGermanFlashcardsData", JSON.stringify(this.wordsDB));
+      },
+
+      switchTab(tabId) {
+        this.activeTab = tabId;
+        
+        const btnManage = document.getElementById('tab-btn-manage');
+        const btnPractice = document.getElementById('tab-btn-practice');
+        const viewManage = document.getElementById('view-manage');
+        const viewPractice = document.getElementById('view-practice');
+
+        if (tabId === 'manage') {
+          viewManage.classList.remove('hidden');
+          viewPractice.classList.add('hidden');
+          
+          btnManage.className = "flex-1 py-3 px-4 rounded-xl font-extrabold text-base transition-all bg-amber-500 text-white shadow-md transform scale-105";
+          btnPractice.className = "flex-1 py-3 px-4 rounded-xl font-extrabold text-base transition-all text-amber-800 hover:bg-amber-100";
+          this.renderWordList();
+        } else {
+          viewManage.classList.add('hidden');
+          viewPractice.classList.remove('hidden');
+          
+          btnPractice.className = "flex-1 py-3 px-4 rounded-xl font-extrabold text-base transition-all bg-amber-500 text-white shadow-md transform scale-105";
+          btnManage.className = "flex-1 py-3 px-4 rounded-xl font-extrabold text-base transition-all text-amber-800 hover:bg-amber-100";
+          this.startPractice();
+        }
+      },
+
+      addWords() {
+        const textarea = document.getElementById('words-input');
+        const text = textarea.value.trim();
+        if (!text) return;
+
+        const lines = text.split('\n');
+        let addedCount = 0;
+
+        lines.forEach(line => {
+          if (!line.trim()) return;
+          
+          const parts = line.split(/\s*[-\u2013\u2014]\s*/);
+          
+          if (parts.length >= 2) {
+            const deWord = parts[0].trim();
+            const uaWord = parts[1].trim();
+
+            if (deWord && uaWord) {
+              const exists = this.wordsDB.some(w => w.de.toLowerCase() === deWord.toLowerCase());
+              if (!exists) {
+                this.wordsDB.push({
+                  id: Date.now() + Math.random(),
+                  de: deWord,
+                  ua: uaWord,
+                  selected: true
+                });
+                addedCount++;
+              }
+            }
+          }
+        });
+
+        if (addedCount > 0) {
+          this.saveToStorage();
+          this.renderWordList();
+          textarea.value = "";
+        } else {
+          alert("Не знайдено нових слів у правильному форматі. Перевірте наявність роздільника ' - ' між словами.");
+        }
+      },
+
+      deleteWord(id) {
+        this.wordsDB = this.wordsDB.filter(w => w.id !== id);
+        this.saveToStorage();
+        this.renderWordList();
+      },
+
+      toggleSelect(id) {
+        const word = this.wordsDB.find(w => w.id === id);
+        if (word) {
+          word.selected = !word.selected;
+          this.saveToStorage();
+          this.updateCountsOnly();
+        }
+      },
+
+      bulkSelect(status) {
+        this.wordsDB.forEach(w => w.selected = status);
+        this.saveToStorage();
+        this.renderWordList();
+      },
+
+      clearAllDB() {
+        if (confirm("Ви впевнені, що хочете ПОВНІСТЮ очистити ваш словник? Цю дію не можна скасувати.")) {
+          this.wordsDB = [];
+          this.saveToStorage();
+          this.renderWordList();
+        }
+      },
+
+      updateCountsOnly() {
+        const total = this.wordsDB.length;
+        const selected = this.wordsDB.filter(w => w.selected).length;
+        document.getElementById('total-count').innerText = total;
+        document.getElementById('selected-count').innerText = selected;
+      },
+
+      renderWordList() {
+        const tbody = document.getElementById('words-table-body');
+        const emptyState = document.getElementById('empty-state');
+        tbody.innerHTML = "";
+
+        this.updateCountsOnly();
+
+        if (this.wordsDB.length === 0) {
+          emptyState.classList.remove('hidden');
+          return;
+        } else {
+          emptyState.classList.add('hidden');
+        }
+
+        [...this.wordsDB].reverse().forEach(w => {
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-amber-50/50 transition-colors";
+          
+          tr.innerHTML = `
+            <td class="p-4 text-center">
+              <input type="checkbox" ${w.selected ? 'checked' : ''} onchange="app.toggleSelect(${w.id})" class="w-5 h-5 accent-amber-500 rounded cursor-pointer transition-transform active:scale-95" />
+            </td>
+            <td class="p-4 text-amber-800">${w.ua}</td>
+            <td class="p-4 text-center">
+              <button onclick="app.deleteWord(${w.id})" class="text-red-400 hover:text-red-600 transition-colors font-medium text-lg p-1" title="Видалити слово">
+                🗑️
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      },
+
+      startPractice() {
+        this.practiceList = this.wordsDB.filter(w => w.selected);
+        this.currentIndex = 0;
+
+        const warningBlock = document.getElementById('practice-warning');
+        const contentBlock = document.getElementById('practice-content');
+
+        if (this.practiceList.length === 0) {
+          warningBlock.classList.remove('hidden');
+          contentBlock.classList.add('hidden');
+        } else {
+          warningBlock.classList.add('hidden');
+          contentBlock.classList.remove('hidden');
+          this.resetFlip();
+          this.renderCard();
+        }
+      },
+
+      renderCard() {
+        if (this.practiceList.length === 0) return;
+        
+        const currentCard = this.practiceList[this.currentIndex];
+        document.getElementById('card-counter').innerText = `Картка ${this.currentIndex + 1} з ${this.practiceList.length}`;
+        
+        const frontText = document.getElementById('card-front-text');
+        const backText = document.getElementById('card-back-text');
+        const frontLabel = document.getElementById('front-lang-label');
+        const backLabel = document.getElementById('back-lang-label');
+        const frontAudio = document.getElementById('front-audio-btn');
+        const backAudio = document.getElementById('back-audio-btn');
+        const backImage = document.getElementById('back-image');
+
+        if (this.direction === 'de-ua') {
+          frontText.innerText = currentCard.de;
+          backText.innerText = currentCard.ua;
+          frontLabel.innerText = "Deutsch 🇩🇪";
+          backLabel.innerText = "Українська 🇺🇦";
+          frontAudio.classList.remove('hidden');
+          backAudio.classList.add('hidden');
+        } else {
+          frontText.innerText = currentCard.ua;
+          backText.innerText = currentCard.de;
+          frontLabel.innerText = "Українська 🇺🇦";
+          backLabel.innerText = "Deutsch 🇩🇪";
+          frontAudio.classList.add('hidden');
+          backAudio.classList.remove('hidden');
+        }
+      },
+
+      flipCard() {
+        const card = document.getElementById('flash-card-element');
+        card.classList.toggle('flipped');
+      },
+
+      resetFlip() {
+        const card = document.getElementById('flash-card-element');
+        if (card) card.classList.remove('flipped');
+      },
+
+      nextCard() {
+        if (this.practiceList.length === 0) return;
+        this.resetFlip();
+        
+        setTimeout(() => {
+          this.currentIndex = (this.currentIndex + 1) % this.practiceList.length;
+          this.renderCard();
+        }, 150);
+      },
+
+      prevCard() {
+        if (this.practiceList.length === 0) return;
+        this.resetFlip();
+
+        setTimeout(() => {
+          this.currentIndex = (this.currentIndex - 1 + this.practiceList.length) % this.practiceList.length;
+          this.renderCard();
+        }, 150);
+      },
+
+      shufflePractice() {
+        if (this.practiceList.length <= 1) return;
+        this.resetFlip();
+
+        setTimeout(() => {
+          for (let i = this.practiceList.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.practiceList[i], this.practiceList[j]] = [this.practiceList[j], this.practiceList[i]];
+          }
+          this.currentIndex = 0;
+          this.renderCard();
+        }, 150);
+      },
+
+      speakCurrentWord() {
+        if (this.practiceList.length === 0) return;
+        
+        const currentWord = this.practiceList[this.currentIndex].de;
+        
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel(); 
+          const utterance = new SpeechSynthesisUtterance(currentWord);
+          utterance.lang = 'de-DE'; 
+          utterance.rate = 0.9;     
+          window.speechSynthesis.speak(utterance);
+        } else {
+          console.warn("Ваш браузер не підтримує озвучку тексту.");
+          alert("На жаль, ваш браузер не підтримує функцію озвучки.");
+        }
+      },
+    };
+
+    window.onload = () => app.init();
+  </script>
+</body>
+</html>
